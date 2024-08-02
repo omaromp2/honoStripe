@@ -4,8 +4,9 @@ account_id = "ea51b75169de83e45a4cec802beb942d"
 workers_dev = true
 node_compat = true
 
-# [vars]
-# MY_VAR = "my-variable"
+[vars]
+DATABASE_URL = "mongodb://localhost:27017/hono"
+STRIPE_SECRET_KEY = "sk_test_51Pj5vrKnmkTtnse15vvE0RPGoipfEjdQcENXaL2Ak4meOd5CrbO7olyA306ZI0p5Dr1gOa4YpC9VC16FXc4iIn3U008icJlhEo"
 
 # [[kv_namespaces]]
 # binding = "MY_KV_NAMESPACE"
