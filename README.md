@@ -1,5 +1,5 @@
 # Hono Stripe Project 
-```
+---
 Small project for testing Hono and cloudflare workers
 
 ```
