@@ -1,8 +1,6 @@
 import { Hono } from 'hono';
 import { ApiController } from './controllers/ApiCtrl';
-import * as crypto from 'node:crypto'; // Use node: prefix
-
-console.log('Stripe Secret Key:', process.env.STRIPE_SECRET_KEY); // Debug line to check if the key is loaded
+// import * as crypto from 'node:crypto'; // Use node: prefix
 
 const app = new Hono();
 

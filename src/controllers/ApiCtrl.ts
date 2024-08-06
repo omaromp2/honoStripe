@@ -1,9 +1,14 @@
 import { Context } from 'hono';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
-import { config } from 'dotenv';
+// import { config } from 'dotenv';
 
-config();
+// config();
+
+export type Env = {
+  STRIPE_SECRET_KEY: string;
+  RANDVAR: string;
+}
 
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -12,7 +17,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export class ApiController {
   static async getHome(c: Context) {
-    return c.json({ message: 'Hello Hono!' });
+    // console.log('Stripe Secret Key:', st); // Debug line to check if the key is loaded
+
+    return c.json({ message: `Hello Hono!, ${c.env.RANDVAR}` });
   }
 
   static async getUsers(c: Context) {
@@ -37,8 +44,9 @@ export class ApiController {
     try {
       const response = await fetch('https://api.stripe.com/v1/products', {
         headers: {
-        //   'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY!}`,
-            'Authorization': `Bearer sk_test_51Pj5vrKnmkTtnse15vvE0RPGoipfEjdQcENXaL2Ak4meOd5CrbO7olyA306ZI0p5Dr1gOa4YpC9VC16FXc4iIn3U008icJlhEo`,
+          // 'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY!}`,
+            // 'Authorization': `Bearer sk_test_51Pj5vrKnmkTtnse15vvE0RPGoipfEjdQcENXaL2Ak4meOd5CrbO7olyA306ZI0p5Dr1gOa4YpC9VC16FXc4iIn3U008icJlhEo`,
+            'Authorization': `Bearer ${c.env.STRIPE_API_KEY}`,
         },
       });
 
