@@ -11,9 +11,6 @@ export type Env = {
 }
 
 const prisma = new PrismaClient();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20',
-});
 
 export class ApiController {
   static async getHome(c: Context) {
@@ -44,8 +41,6 @@ export class ApiController {
     try {
       const response = await fetch('https://api.stripe.com/v1/products', {
         headers: {
-          // 'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY!}`,
-            // 'Authorization': `Bearer sk_test_51Pj5vrKnmkTtnse15vvE0RPGoipfEjdQcENXaL2Ak4meOd5CrbO7olyA306ZI0p5Dr1gOa4YpC9VC16FXc4iIn3U008icJlhEo`,
             'Authorization': `Bearer ${c.env.STRIPE_API_KEY}`,
         },
       });
@@ -62,38 +57,103 @@ export class ApiController {
     }
   }
 
+  static async getProduct(c: Context) {
+    const { productId } = c.req.query();
+
+    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    });
+
+    try {
+      const product = await stripe.products.retrieve(productId);
+      return c.json(product);
+    } catch (error) {
+      console.error(error);
+      return c.json({ error: 'Failed to fetch product from Stripe' }, 500);
+    }
+  }
+
   static async createCheckoutSession(c: Context) {
-      const {
-          productId,
-          successUrl,
-          cancelUrl
-      } = await c.req.json();
+    const { productId, successUrl, cancelUrl } = await c.req.json();
 
-      try {
-          const session = await stripe.checkout.sessions.create({
-              payment_method_types: ['card'],
-              line_items: [{
-                  price_data: {
-                      currency: 'usd',
-                      product: productId,
-                      unit_amount: 2000, // Update with the correct amount
-                  },
-                  quantity: 1,
-              }, ],
-              mode: 'payment',
-              success_url: successUrl,
-              cancel_url: cancelUrl,
-          });
+    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    });
 
-          return c.json({
-              id: session.id
-          });
-      } catch (error) {
-          console.error(error);
-          return c.json({
-              error: 'Failed to create checkout session'
-          }, 500);
-      }
+    try {
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product: productId,
+              unit_amount: 2000, // Update with the correct amount
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+
+      return c.json({ id: session.id });
+    } catch (error) {
+      console.error(error);
+      return c.json({ error: 'Failed to create checkout session' }, 500);
+    }
+  }
+
+  static async createTransaction(c: Context) {
+    const { amount, currency, payment_method, receipt_email, return_url } = await c.req.json();
+
+    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    });
+
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount,
+        currency,
+        payment_method,
+        receipt_email,
+        confirmation_method: 'automatic',
+        confirm: true,
+        return_url, // Include the return_url
+      });
+
+      return c.json({ success: true, paymentIntent });
+    } catch (error) {
+      console.error(error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
+  }
+
+  static async createPizzaTransaction(c: Context) {
+    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20',
+    });
+
+    try {
+      // Assuming the pizza product has a fixed price, retrieve the product and price ID
+      const productId = 'prod_QaHLTLx2K6fqzd'; // Replace with actual product ID for pizza
+      const priceId = 'price_1Pj6mXKnmkTtnse1hAzS8Cj6'; // Replace with actual price ID for pizza
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: 200, // Amount in cents for pizza
+        currency: 'usd',
+        payment_method_types: ['card'],
+        receipt_email: 'test@example.com', // Replace with actual receipt email
+        description: 'Purchase of pizza product',
+        metadata: { product_id: productId },
+      });
+
+      return c.json({ success: true, paymentIntent });
+    } catch (error) {
+      console.error(error);
+      return c.json({ success: false, error: error.message }, 500);
+    }
   }
 
 }

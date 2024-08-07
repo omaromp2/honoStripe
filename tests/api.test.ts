@@ -53,8 +53,7 @@ test.describe("Hono API", () => {
     const response = await request.post('/create-checkout-session', {
       headers: {
         'Content-Type': 'application/json',
-        // 'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
-        'Authorization': 'Bearer sk_test_51Pj5vrKnmkTtnse15vvE0RPGoipfEjdQcENXaL2Ak4meOd5CrbO7olyA306ZI0p5Dr1gOa4YpC9VC16FXc4iIn3U008icJlhEo',
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
       },
       data: {
         productId: 'prod_QaHLTLx2K6fqzd', // Example product ID
@@ -62,12 +61,78 @@ test.describe("Hono API", () => {
         cancelUrl: 'https://example.com/cancel',
       },
     });
-    // expect(response.ok()).toBeTruthy();
+    expect(response.ok()).toBeTruthy();
     const body = await response.json();
-    // expect(body).toHaveProperty('id');
+    expect(body).toHaveProperty('id');
 
     console.log(body);
 
+  });
+
+  test('POST /create-transaction should create a transaction', async ({ request }) => {
+    const response = await request.post('/create-transaction', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      },
+      data: {
+        amount: 2000, // Amount in cents
+        currency: 'usd',
+        payment_method: 'pm_card_visa', // Test payment method provided by Stripe
+        receipt_email: 'test@example.com',
+        return_url: 'https://example.com/return', // Include return_url
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body).toHaveProperty('success', true);
+    expect(body).toHaveProperty('paymentIntent');
+    expect(body.paymentIntent).toHaveProperty('id');
+  });
+
+  test('POST /create-transaction for pizza product', async ({ request }) => {
+    const productId = 'prod_QaHLTLx2K6fqzd'; // Use the ID of the "pizza" product
+    const productResponse = await request.get(`/product?productId=${productId}`);
+    expect(productResponse.ok()).toBeTruthy();
+    const product = await productResponse.json();
+    expect(product).toHaveProperty('id', productId);
+    expect(product).toHaveProperty('name', 'pizza');
+
+    const response = await request.post('/create-transaction', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      },
+      data: {
+        amount: 2000, // Amount in cents for pizza
+        currency: 'usd',
+        payment_method: 'pm_card_visa', // Test payment method provided by Stripe
+        receipt_email: 'test@example.com',
+        return_url: 'https://example.com/return', // Include return_url
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body).toHaveProperty('success', true);
+    expect(body).toHaveProperty('paymentIntent');
+    expect(body.paymentIntent).toHaveProperty('id');
+  });
+
+  test('POST /create-pizza-transaction should create a pizza transaction', async ({ request }) => {
+    const response = await request.post('/create-pizza-transaction', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.STRIPE_SECRET_KEY}`,
+      },
+      data: {
+        receipt_email: 'test@example.com',
+      },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body).toHaveProperty('success', true);
+    expect(body).toHaveProperty('paymentIntent');
+    expect(body.paymentIntent).toHaveProperty('id');
   });
 
 });
